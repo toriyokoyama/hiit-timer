@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#111827"/>
+  <circle cx="256" cy="290" r="168" fill="none" stroke="#374151" stroke-width="12"/>
+  <circle cx="256" cy="290" r="168" fill="none" stroke="#f97316" stroke-width="12"
+    stroke-dasharray="264 792" stroke-dashoffset="0" stroke-linecap="round"
+    transform="rotate(-90 256 290)"/>
+  <!-- hour hand -->
+  <line x1="256" y1="290" x2="256" y2="162" stroke="white"   stroke-width="14" stroke-linecap="round"/>
+  <!-- minute hand -->
+  <line x1="256" y1="290" x2="326" y2="320" stroke="#f97316" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="256" cy="290" r="12" fill="#f97316"/>
+  <!-- crown -->
+  <rect x="228" y="96" width="56" height="22" rx="8" fill="#9ca3af"/>
+</svg>
