@@ -44,6 +44,10 @@
         <label for="field-leadin">Lead-in time (seconds, 0 to skip)</label>
         <input id="field-leadin" type="number" min="0" max="60" value="0">
       </div>
+      <div class="form-field">
+        <label for="field-rounds">Rounds (repeats the looped intervals)</label>
+        <input id="field-rounds" type="number" min="1" max="99" value="1">
+      </div>
       <div class="section-header">
         <span class="section-label">Intervals</span>
         <button class="btn-secondary" id="btn-add-interval">+ Add interval</button>
@@ -61,6 +65,7 @@
     </header>
     <main class="timer-main">
       <div id="timer-segment-label" class="segment-label"></div>
+      <div id="timer-round" class="timer-round"></div>
       <div id="timer-countdown" class="timer-countdown">0:00</div>
       <div class="progress-wrap">
         <div id="timer-progress-bar" class="progress-bar"></div>

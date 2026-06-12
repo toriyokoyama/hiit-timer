@@ -257,6 +257,23 @@ html, body {
   justify-content: center;
 }
 .btn-row-del:active { background: var(--surface2); }
+.btn-loop-toggle {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--surface2);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
+}
+.btn-loop-toggle.in-loop { color: var(--accent); border-color: var(--accent); opacity: 1; }
+.btn-loop-toggle:active { background: var(--surface2); }
 
 /* ── Timer view ─────────────────────────────────────────────────── */
 .timer-main {
@@ -276,6 +293,13 @@ html, body {
   letter-spacing: 0.08em;
   color: var(--accent);
   min-height: 36px;
+}
+.timer-round {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-align: center;
+  min-height: 20px;
 }
 .timer-countdown {
   font-size: 96px;

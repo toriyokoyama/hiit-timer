@@ -91,14 +91,51 @@ const SCHED_MS     = 250;  // scheduler tick interval
 function buildSegments(workout) {
   const segs = [];
   let t = 0;
+  const rounds = Math.max(1, workout.rounds || 1);
+
   if (workout.leadIn > 0) {
     segs.push({ label: 'Get Ready', start: 0, end: workout.leadIn });
     t = workout.leadIn;
   }
-  for (const iv of workout.intervals) {
-    segs.push({ label: iv.label, start: t, end: t + iv.duration });
-    t += iv.duration;
+
+  const ivs = workout.intervals;
+
+  if (rounds <= 1 || !ivs.some(iv => iv.loop !== false)) {
+    for (const iv of ivs) {
+      segs.push({ label: iv.label, start: t, end: t + iv.duration });
+      t += iv.duration;
+    }
+    return segs;
   }
+
+  // Determine the loop block: from first looped interval to last looped interval
+  const firstLoop = ivs.findIndex(iv => iv.loop !== false);
+  let lastLoop = firstLoop;
+  for (let i = ivs.length - 1; i >= 0; i--) {
+    if (ivs[i].loop !== false) { lastLoop = i; break; }
+  }
+
+  // Pre-loop: intervals before the loop block, run once
+  for (let i = 0; i < firstLoop; i++) {
+    segs.push({ label: ivs[i].label, start: t, end: t + ivs[i].duration });
+    t += ivs[i].duration;
+  }
+
+  // Loop block × rounds (all intervals from firstLoop..lastLoop)
+  const loopIvs = ivs.slice(firstLoop, lastLoop + 1);
+  for (let r = 0; r < rounds; r++) {
+    for (const iv of loopIvs) {
+      segs.push({ label: iv.label, start: t, end: t + iv.duration, round: r + 1, totalRounds: rounds });
+      t += iv.duration;
+    }
+  }
+
+  // Post-loop: intervals after the loop block, run once
+  for (let i = lastLoop + 1; i < ivs.length; i++) {
+    segs.push({ label: ivs[i].label, start: t, end: t + ivs[i].duration });
+    t += ivs[i].duration;
+  }
+
   return segs;
 }
 
@@ -179,12 +216,14 @@ function nextSegment(seg) {
 
 function applyDisplay(seg, remaining, done = false) {
   const labelEl    = el('timer-segment-label');
+  const roundEl    = el('timer-round');
   const countEl    = el('timer-countdown');
   const nextEl     = el('timer-next');
   const progressEl = el('timer-progress-bar');
 
   if (done) {
     labelEl.textContent    = 'Done!';
+    roundEl.textContent    = '';
     countEl.textContent    = '0:00';
     nextEl.textContent     = '';
     progressEl.style.width = '100%';
@@ -193,6 +232,7 @@ function applyDisplay(seg, remaining, done = false) {
 
   if (!seg) return;
   labelEl.textContent = seg.label;
+  roundEl.textContent = seg.totalRounds > 1 ? `Round ${seg.round} / ${seg.totalRounds}` : '';
   countEl.textContent = formatTime(remaining);
 
   const ns = nextSegment(seg);
@@ -249,8 +289,8 @@ async function startTimer(workout) {
 
 function pauseTimer() {
   if (!T.active || T.paused) return;
+  T.pausedElapsed = (Date.now() - T.startTime) / 1000; // compute BEFORE setting paused
   T.paused        = true;
-  T.pausedElapsed = getElapsed();
   cancelAllAudio();
   clearTimeout(T.schedTimeout);
   cancelAnimationFrame(T.rafId);
@@ -329,7 +369,21 @@ function formatTime(seconds) {
 }
 
 function totalSeconds(workout) {
-  return (workout.leadIn || 0) + workout.intervals.reduce((a, iv) => a + iv.duration, 0);
+  const rounds = Math.max(1, workout.rounds || 1);
+  const leadIn = workout.leadIn || 0;
+  const ivs = workout.intervals;
+  if (rounds <= 1 || !ivs.some(iv => iv.loop !== false)) {
+    return leadIn + ivs.reduce((a, iv) => a + iv.duration, 0);
+  }
+  const firstLoop = ivs.findIndex(iv => iv.loop !== false);
+  let lastLoop = firstLoop;
+  for (let i = ivs.length - 1; i >= 0; i--) {
+    if (ivs[i].loop !== false) { lastLoop = i; break; }
+  }
+  const preLoop  = ivs.slice(0, firstLoop).reduce((a, iv) => a + iv.duration, 0);
+  const loopBody = ivs.slice(firstLoop, lastLoop + 1).reduce((a, iv) => a + iv.duration, 0);
+  const postLoop = ivs.slice(lastLoop + 1).reduce((a, iv) => a + iv.duration, 0);
+  return leadIn + preLoop + loopBody * rounds + postLoop;
 }
 
 function fmtDuration(secs) {
@@ -369,7 +423,7 @@ function renderList() {
     li.innerHTML = `
       <div class="workout-card-info">
         <div class="workout-card-name">${escHtml(w.name)}</div>
-        <div class="workout-card-meta">${w.intervals.length} interval${w.intervals.length !== 1 ? 's' : ''} · ${fmtDuration(totalSeconds(w))}</div>
+        <div class="workout-card-meta">${w.intervals.length} interval${w.intervals.length !== 1 ? 's' : ''}${w.rounds > 1 ? ` × ${w.rounds}` : ''} · ${fmtDuration(totalSeconds(w))}</div>
       </div>
       <div class="workout-card-actions">
         <button class="btn-card-action" data-action="edit"   data-id="${w.id}" title="Edit">✎</button>
@@ -389,23 +443,25 @@ function openEdit(workout = null) {
   el('edit-heading').textContent  = workout ? 'Edit Workout' : 'New Workout';
   el('field-name').value          = workout?.name    ?? '';
   el('field-leadin').value        = workout?.leadIn  ?? 0;
-  renderIntervalEditor(workout?.intervals ?? [{ label: 'Work', duration: 20 }, { label: 'Rest', duration: 10 }]);
+  el('field-rounds').value        = workout?.rounds  ?? 1;
+  renderIntervalEditor(workout?.intervals ?? [{ label: 'Work', duration: 20, loop: true }, { label: 'Rest', duration: 10, loop: true }]);
   showView('edit');
 }
 
 function renderIntervalEditor(intervals) {
   const listEl = el('interval-list');
   listEl.innerHTML = '';
-  intervals.forEach((iv, i) => appendIntervalRow(iv.label, iv.duration));
+  intervals.forEach(iv => appendIntervalRow(iv.label, iv.duration, iv.loop !== false));
 }
 
-function appendIntervalRow(label = '', duration = 20) {
+function appendIntervalRow(label = '', duration = 20, loop = true) {
   const listEl = el('interval-list');
   const li = document.createElement('li');
   li.className = 'interval-row';
   li.innerHTML = `
     <input class="inp-label"    type="text"   value="${escHtml(label)}" placeholder="Label">
     <input class="inp-duration" type="number" min="1" max="3600" value="${duration}">
+    <button class="btn-loop-toggle${loop ? ' in-loop' : ''}" title="Include in loop">↻</button>
     <button class="btn-row-del" title="Remove">✕</button>`;
   listEl.appendChild(li);
 }
@@ -413,12 +469,14 @@ function appendIntervalRow(label = '', duration = 20) {
 function collectEditForm() {
   const name   = el('field-name').value.trim();
   const leadIn = Math.max(0, parseInt(el('field-leadin').value, 10) || 0);
+  const rounds = Math.max(1, parseInt(el('field-rounds').value, 10) || 1);
   const rows   = el('interval-list').querySelectorAll('.interval-row');
   const intervals = Array.from(rows).map(row => ({
     label:    row.querySelector('.inp-label').value.trim() || 'Interval',
     duration: Math.max(1, parseInt(row.querySelector('.inp-duration').value, 10) || 1),
+    loop:     row.querySelector('.btn-loop-toggle').classList.contains('in-loop'),
   }));
-  return { name, leadIn, intervals };
+  return { name, leadIn, rounds, intervals };
 }
 
 function saveEdit() {
@@ -449,8 +507,10 @@ el('btn-edit-save').addEventListener('click', saveEdit);
 el('btn-add-interval').addEventListener('click', () => appendIntervalRow());
 
 el('interval-list').addEventListener('click', e => {
-  const btn = e.target.closest('.btn-row-del');
-  if (btn) btn.closest('.interval-row').remove();
+  const delBtn = e.target.closest('.btn-row-del');
+  if (delBtn) { delBtn.closest('.interval-row').remove(); return; }
+  const loopBtn = e.target.closest('.btn-loop-toggle');
+  if (loopBtn) loopBtn.classList.toggle('in-loop');
 });
 
 el('workout-list').addEventListener('click', e => {
