@@ -1,0 +1,24 @@
+{
+  "name": "hiit-timer",
+  "version": "1.0.0",
+  "description": "High intensity interval timer for workouts",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toriyokoyama/hiit-timer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/toriyokoyama/hiit-timer/issues"
+  },
+  "homepage": "https://github.com/toriyokoyama/hiit-timer#readme",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}
