@@ -513,6 +513,49 @@ el('interval-list').addEventListener('click', e => {
   if (loopBtn) loopBtn.classList.toggle('in-loop');
 });
 
+// ─── Start Screen ─────────────────────────────────────────────────────────────
+
+let pendingWorkout = null;
+
+function openStartScreen(workout) {
+  pendingWorkout = workout;
+  el('start-workout-name').textContent = workout.name;
+
+  const rounds = Math.max(1, workout.rounds || 1);
+  const ivCount = workout.intervals.length;
+  const total = totalSeconds(workout);
+
+  el('start-stats').innerHTML = `
+    <div class="start-stat">
+      <span class="start-stat-label">Duration</span>
+      <span class="start-stat-value">${fmtDuration(total)}</span>
+    </div>
+    <div class="start-stat">
+      <span class="start-stat-label">Intervals</span>
+      <span class="start-stat-value">${ivCount}</span>
+    </div>
+    ${rounds > 1 ? `<div class="start-stat">
+      <span class="start-stat-label">Rounds</span>
+      <span class="start-stat-value">${rounds}</span>
+    </div>` : ''}
+    ${workout.leadIn > 0 ? `<div class="start-stat">
+      <span class="start-stat-label">Lead-in</span>
+      <span class="start-stat-value">${workout.leadIn}s</span>
+    </div>` : ''}
+  `;
+
+  showView('start');
+}
+
+el('btn-start-back').addEventListener('click', () => {
+  pendingWorkout = null;
+  showView('list');
+});
+
+el('btn-go').addEventListener('click', () => {
+  if (pendingWorkout) startTimer(pendingWorkout);
+});
+
 el('workout-list').addEventListener('click', e => {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
@@ -520,7 +563,7 @@ el('workout-list').addEventListener('click', e => {
   const workouts = loadWorkouts();
   const w = workouts.find(w => w.id === id);
 
-  if (action === 'play'   && w) startTimer(w);
+  if (action === 'play'   && w) openStartScreen(w);
   if (action === 'edit'   && w) openEdit(w);
   if (action === 'delete' && w) {
     if (confirm(`Delete "${w.name}"?`)) {
