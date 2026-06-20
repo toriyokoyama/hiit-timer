@@ -348,13 +348,19 @@ document.addEventListener('visibilitychange', () => {
       scheduleAllRemaining();
     }
   } else {
-    if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
     if (T.active && !T.paused) {
       requestWakeLock();
       cancelAnimationFrame(T.rafId);
       T.rafId = requestAnimationFrame(timerLoop);
-      // Re-run scheduler in case some events are still upcoming
-      runScheduler();
+      const resume = audioCtx?.state === 'suspended' ? audioCtx.resume() : Promise.resolve();
+      resume.catch(() => {}).then(() => {
+        if (!T.active || T.paused || !audioCtx) return;
+        const elapsed = getElapsed();
+        T.audioStart   = audioCtx.currentTime - elapsed;
+        T.nextEvtIdx   = T.audioEvents.findIndex(e => e.time > elapsed);
+        if (T.nextEvtIdx === -1) T.nextEvtIdx = T.audioEvents.length;
+        runScheduler();
+      });
     }
   }
 });
