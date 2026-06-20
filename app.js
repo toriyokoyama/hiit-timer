@@ -359,6 +359,28 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+// ─── Confirmation Modal ───────────────────────────────────────────────────────
+
+let confirmCallback = null;
+
+function showConfirm(message, onConfirm) {
+  el('confirm-message').textContent = message;
+  el('confirm-overlay').classList.remove('hidden');
+  confirmCallback = onConfirm;
+}
+
+el('confirm-cancel').addEventListener('click', () => {
+  el('confirm-overlay').classList.add('hidden');
+  confirmCallback = null;
+});
+
+el('confirm-ok').addEventListener('click', () => {
+  el('confirm-overlay').classList.add('hidden');
+  const cb = confirmCallback;
+  confirmCallback = null;
+  cb?.();
+});
+
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 function el(id) { return document.getElementById(id); }
@@ -566,15 +588,15 @@ el('workout-list').addEventListener('click', e => {
   if (action === 'play'   && w) openStartScreen(w);
   if (action === 'edit'   && w) openEdit(w);
   if (action === 'delete' && w) {
-    if (confirm(`Delete "${w.name}"?`)) {
+    showConfirm(`Delete "${w.name}"?`, () => {
       saveWorkouts(workouts.filter(x => x.id !== id));
       renderList();
-    }
+    });
   }
 });
 
 el('btn-timer-stop').addEventListener('click', () => {
-  if (confirm('Stop this workout?')) stopTimer(false);
+  showConfirm('Stop this workout?', () => stopTimer(false));
 });
 
 el('btn-pause-resume').addEventListener('click', () => {

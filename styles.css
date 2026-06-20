@@ -275,6 +275,55 @@ html, body {
 .btn-loop-toggle.in-loop { color: var(--accent); border-color: var(--accent); opacity: 1; }
 .btn-loop-toggle:active { background: var(--surface2); }
 
+/* ── Confirmation modal ─────────────────────────────────────────── */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  z-index: 100;
+}
+.confirm-overlay.hidden { display: none; }
+.confirm-sheet {
+  background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  padding: 28px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.confirm-message {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+}
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+}
+.confirm-btn {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.confirm-cancel {
+  background: var(--surface2);
+  color: var(--text);
+}
+.confirm-ok {
+  background: var(--danger);
+  color: white;
+}
+.confirm-cancel:active { filter: brightness(1.15); }
+.confirm-ok:active     { filter: brightness(0.88); }
+
 /* ── Start screen ───────────────────────────────────────────────── */
 .start-main {
   flex: 1;
