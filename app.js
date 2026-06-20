@@ -609,6 +609,43 @@ el('btn-pause-resume').addEventListener('click', () => {
   if (T.paused) resumeTimer(); else pauseTimer();
 });
 
+// ─── Export / Import ──────────────────────────────────────────────────────────
+
+el('btn-export').addEventListener('click', () => {
+  const workouts = loadWorkouts();
+  if (workouts.length === 0) { showConfirm('No workouts to export.', () => {}); return; }
+  const blob = new Blob([JSON.stringify(workouts, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `hiit-workouts-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+el('btn-import').addEventListener('click', () => el('import-input').click());
+
+el('import-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    try {
+      const imported = JSON.parse(evt.target.result);
+      if (!Array.isArray(imported)) throw new Error();
+      const existing  = loadWorkouts();
+      const existingIds = new Set(existing.map(w => w.id));
+      const merged   = [...existing, ...imported.filter(w => w.id && w.name && !existingIds.has(w.id))];
+      saveWorkouts(merged);
+      renderList();
+    } catch {
+      showConfirm('Invalid backup file.', () => {});
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 if ('serviceWorker' in navigator) {

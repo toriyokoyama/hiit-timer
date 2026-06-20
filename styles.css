@@ -147,6 +147,27 @@ html, body {
 .empty-state p { font-size: 18px; margin-bottom: 24px; }
 .hidden { display: none !important; }
 
+.list-footer {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--surface2);
+  flex-shrink: 0;
+}
+.btn-footer {
+  flex: 1;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-footer:active { filter: brightness(1.2); }
+
 /* ── Edit view ──────────────────────────────────────────────────── */
 .edit-main {
   flex: 1;
